@@ -1,9 +1,9 @@
-# 📘 Project-11: CloudTrail Log Processing Pipeline  
+#  Project-11: CloudTrail Log Processing Pipeline  
 ### **Terraform + S3 + Lambda (ETL) + Glue + Athena**
 
 ---
 
-## 🧩 Overview
+##  Overview
 
 Project-11 is a complete AWS log analytics pipeline that ingests CloudTrail logs, processes them through a Lambda ETL function, stores clean NDJSON output, and enables SQL analytics through Athena.  
 Everything is deployed and managed using Terraform.
@@ -19,7 +19,7 @@ This project demonstrates:
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 project-11/
 └── terraform
@@ -41,7 +41,7 @@ Copy code
 
 ---
 
-## 🏗 Architecture
+##  Architecture
 
 CloudTrail → S3 (raw/) → S3 Event Trigger → Lambda ETL
 → S3 (processed/) → Glue Table → Athena Queries
@@ -51,7 +51,7 @@ Copy code
 
 ---
 
-## 🔄 Processing Flow
+##  Processing Flow
 
 1. CloudTrail delivers `.json.gz` logs into the **raw/** folder.  
 2. S3 triggers **Lambda** automatically on new file creation.  
@@ -66,7 +66,7 @@ Copy code
 
 ---
 
-## 🧠 Lambda ETL Summary
+##  Lambda ETL Summary
 
 ### Key Actions Performed
 
@@ -100,7 +100,7 @@ Copy code
 
 ---
 
-## 🧬 Glue + Athena
+##  Glue + Athena
 
 Glue table created via Terraform:
 
@@ -110,14 +110,15 @@ Glue table created via Terraform:
 - Every column mapped as **string**
 - Works with NDJSON perfectly
 
-### ✨ Example Athena Query
+###  Example Athena Query
 
-```sql
+
 SELECT eventTime, eventName
 FROM project11_processed
 ORDER BY eventTime DESC
 LIMIT 20;
-🛠 Updating Lambda Code (IMPORTANT)
+
+### Updating Lambda Code (IMPORTANT)
 bash
 Copy code
 cd terraform/dev/lambda
@@ -125,7 +126,7 @@ rm ../lambda_function.zip
 zip -r ../lambda_function.zip process_event.py
 cd ..
 terraform apply
-🐛 Debugging Summary (Real Issues Solved)
+## Debugging Summary (Real Issues Solved)
 1. Gzip Decompression Errors
 Reason: Trying to decode binary gzip directly.
 Fix: Use gzip.decompress() correctly.
@@ -149,7 +150,7 @@ Fix: Changed ETL to NDJSON output.
 Reason: Glue schema had incorrect types.
 Fix: All columns changed to string.
 
-✅ Final Outcome
+## Final Outcome
 This project delivers:
 
 Automated CloudTrail ingestion
