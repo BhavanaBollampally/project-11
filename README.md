@@ -140,13 +140,21 @@ Reason: Glue schema had incorrect types.
 Fix: All columns changed to string.
 
 ## Final Outcome
-1.This project delivers:
-2.Automated CloudTrail ingestion
-3.End-to-end serverless ETL using Lambda
-4.NDJSON output ready for analytics
-5.Glue-based metadata catalog
-6.Athena SQL querying on processed events
-7.Full Terraform-managed deployment
-8.Practical debugging experience across AWS services
+This project delivers:
+
+
+1.Automated CloudTrail ingestion
+
+2.End-to-end serverless ETL using Lambda
+
+3.NDJSON output ready for analytics
+
+4.Glue-based metadata catalog
+
+5.Athena SQL querying on processed events
+
+6.Full Terraform-managed deployment
+
+7.Practical debugging experience across AWS services
 
 A production-style AWS log analytics pipeline and a strong DevOps + Data Engineering portfolio project.
