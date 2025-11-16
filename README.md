@@ -12,14 +12,16 @@ This project demonstrates:
 
 - Infrastructure-as-Code (Terraform)
 - Serverless ETL (Lambda)
-- S3 event-driven pipelines
+- S3 event-driven processing
 - Gzip + JSON parsing
 - Glue + Athena analytics
-- Real-world DevOps debugging and data engineering fundamentals
+- Real-world DevOps debugging and data engineering steps
 
 ---
 
 ##  Project Structure
+
+
 
 project-11/
 └── terraform
@@ -36,36 +38,42 @@ project-11/
 └── scripts
 └── monitor.sh
 
+
 ---
 
 ##  Architecture
+
+
 
 CloudTrail → S3 (raw/) → S3 Event Trigger → Lambda ETL
 → S3 (processed/) → Glue Table → Athena Queries
 
 
-### Processing Flow
+---
 
-1. CloudTrail sends `.json.gz` logs to the **raw folder**.
-2. S3 event triggers **Lambda**.
-3. Lambda:
+##  Processing Flow
+
+1. CloudTrail delivers `.json.gz` logs into the **raw/** folder.
+2. S3 triggers **Lambda** automatically on new file creation.
+3. Lambda ETL:
    - decompresses gzip
-   - parses JSON
-   - extracts and flattens CloudTrail events
-   - writes **NDJSON** to `processed/`
-4. Glue table maps the processed folder.
-5. Athena queries the cleaned events.
+   - parses CloudTrail JSON
+   - extracts and flattens fields
+   - converts to **NDJSON** (1 JSON per line)
+   - uploads into **processed/** prefix
+4. Glue Catalog maps the processed folder.
+5. Athena queries the flattened NDJSON.
 
 ---
 
 ##  Lambda ETL Summary
 
-### Key Actions:
+### Key Actions Performed
 
-- Read compressed `.gz` file from S3  
-- `gzip.decompress()` → UTF-8 decode  
-- Load JSON → extract `"Records"`  
-- Flatten:
+- Read raw compressed `.gz` file from S3  
+- `gzip.decompress()` → decode UTF-8  
+- Load JSON → extract `"Records"` array  
+- Flatten fields:
   - eventTime  
   - eventName  
   - eventSource  
@@ -75,10 +83,17 @@ CloudTrail → S3 (raw/) → S3 Event Trigger → Lambda ETL
   - requestParameters  
   - responseElements  
   - raw_event  
-- Convert to **NDJSON** (1 JSON per line)  
-- Store back to S3 `processed/` prefix  
+- Convert into **NDJSON format** (each event on its own line)
+- Write output into:
 
-### NDJSON output example:
+
+
+processed/<same_path>/<file>.json
+
+
+### NDJSON Output Example
+
+
 
 {"eventTime":"2025-11-15T18:02:34Z","eventName":"ListManagedNotificationEvents", ...}
 
@@ -87,14 +102,15 @@ CloudTrail → S3 (raw/) → S3 Event Trigger → Lambda ETL
 
 ##  Glue + Athena
 
-Glue table (via Terraform):
+Glue table created via Terraform:
 
-- input format: `TextInputFormat`
+- Input format: `TextInputFormat`
+- Output format: `HiveIgnoreKeyTextOutputFormat`
 - SerDe: `org.openx.data.jsonserde.JsonSerDe`
-- columns mapped as **string**
-- works with NDJSON (line-delimited JSON)
+- Every column mapped as **string**
+- Works with NDJSON perfectly
 
-### Example Athena query:
+###  Example Athena Query
 
 ```sql
 SELECT eventTime, eventName
@@ -102,53 +118,57 @@ FROM project11_processed
 ORDER BY eventTime DESC
 LIMIT 20;
 
-## After Lambda code update:
+ Updating Lambda Code (IMPORTANT)
 cd terraform/dev/lambda
 rm ../lambda_function.zip
 zip -r ../lambda_function.zip process_event.py
 cd ..
 terraform apply
 
-Debugging Summary (Real Issues Solved)
-1. Gzip decompression errors
+##  Debugging Summary (Real Issues Solved)
+1. Gzip Decompression Errors
 
-Fixed via correct gzip.decompress() usage.
+Reason: Trying to decode binary gzip directly.
+Fix: Use gzip.decompress() correctly.
 
-2. Lambda not triggering
+2. Lambda Not Triggering
 
-Cause: Missing source and wrong prefix.
-Fix: Updated S3 event block.
+Reason: Missing source argument & wrong prefix in event block.
+Fix: Corrected S3 trigger path and added proper event configuration.
 
-3. Wrong processed output path
+3. Wrong Processed File Path
 
-Cause: raw path had deeper prefix.
-Fix: Corrected:
+Reason: CloudTrail delivers logs in deep nested structure.
+Fix:
 
-key.replace("raw/", "processed/")
+output_key = key.replace("raw/", "processed/").replace(".gz", ".json")
 
-4. Athena errors (INVALID_FUNCTION_ARGUMENT)
+4. Athena INVALID_FUNCTION_ARGUMENT
 
-Cause: processed output was single big JSON array.
-Fix: Changed to NDJSON (each event on new line).
+Reason: Lambda returned single large JSON array, not line-delimited JSON.
+Fix: Changed ETL to NDJSON output.
 
-5. Timestamp type mismatches
+5. Timestamp Casting Issues
 
-Fix: set Glue schema column type to string.
+Reason: Glue schema had incorrect types.
+Fix: All columns changed to string.
 
-Final Outcome
+##  Final Outcome
 
 This project delivers:
 
 automated CloudTrail ingestion
 
-serverless ETL using Python Lambda
+end-to-end serverless ETL with Lambda
 
-clean NDJSON suitable for Athena
+NDJSON output suitable for analytics
 
-Glue-based schema management
+Glue-based metadata catalog
 
-full Terraform-deployed pipeline
+Athena SQL querying for CloudTrail events
 
-real-world debugging experience
+full Terraform-managed deployment
 
-A complete production-style log analytics pipeline and a strong DevOps + Data Engineering portfolio project.
+real-world troubleshooting and debugging experience
+
+A production-grade AWS log processing + analytics pipeline and a strong DevOps + Data Engineering portfolio project.
