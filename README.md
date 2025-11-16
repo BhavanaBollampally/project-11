@@ -36,8 +36,6 @@ project-11/
 └── scripts
 └── monitor.sh
 
-yaml
-Copy code
 
 ---
 
@@ -46,8 +44,6 @@ Copy code
 CloudTrail → S3 (raw/) → S3 Event Trigger → Lambda ETL
 → S3 (processed/) → Glue Table → Athena Queries
 
-markdown
-Copy code
 
 ---
 
@@ -88,15 +84,12 @@ Copy code
 
 processed/<same_path>/<file>.json
 
-shell
-Copy code
 
 ### NDJSON Output Example
 
 {"eventTime":"2025-11-15T18:02:34Z","eventName":"ListManagedNotificationEvents", ...}
 
-yaml
-Copy code
+
 
 ---
 
@@ -119,8 +112,7 @@ ORDER BY eventTime DESC
 LIMIT 20;
 
 ### Updating Lambda Code (IMPORTANT)
-bash
-Copy code
+
 cd terraform/dev/lambda
 rm ../lambda_function.zip
 zip -r ../lambda_function.zip process_event.py
@@ -138,9 +130,6 @@ Fix: Corrected S3 trigger path and added proper event configuration.
 3. Wrong Processed File Path
 Reason: CloudTrail delivers logs in deep nested structure.
 Fix:
-
-python
-Copy code
 output_key = key.replace("raw/", "processed/").replace(".gz", ".json")
 4. Athena INVALID_FUNCTION_ARGUMENT
 Reason: Lambda returned single large JSON array, not line-delimited JSON.
@@ -151,20 +140,13 @@ Reason: Glue schema had incorrect types.
 Fix: All columns changed to string.
 
 ## Final Outcome
-This project delivers:
-
-Automated CloudTrail ingestion
-
-End-to-end serverless ETL using Lambda
-
-NDJSON output ready for analytics
-
-Glue-based metadata catalog
-
-Athena SQL querying on processed events
-
-Full Terraform-managed deployment
-
-Practical debugging experience across AWS services
+1.This project delivers:
+2.Automated CloudTrail ingestion
+3.End-to-end serverless ETL using Lambda
+4.NDJSON output ready for analytics
+5.Glue-based metadata catalog
+6.Athena SQL querying on processed events
+7.Full Terraform-managed deployment
+8.Practical debugging experience across AWS services
 
 A production-style AWS log analytics pipeline and a strong DevOps + Data Engineering portfolio project.
