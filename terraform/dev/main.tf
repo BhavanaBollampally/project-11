@@ -53,36 +53,6 @@ resource "aws_s3_object" "athena_results" {
   key    = "athena-results/"
 }
 
-data "aws_iam_policy_document" "logs_bucket_policy" {
-  statement {
-    sid    = "DenyInsecureTransport"
-    effect = "Deny"
-
-    principals {
-      type        = "*"
-      identifiers = ["*"]
-    }
-
-    actions = ["s3:*"]
-
-    resources = [
-      aws_s3_bucket.logs.arn,
-      "${aws_s3_bucket.logs.arn}/*"
-    ]
-
-    condition {
-      test     = "Bool"
-      variable = "aws:SecureTransport"
-      values   = ["false"]
-    }
-  }
-}
-
-resource "aws_s3_bucket_policy" "logs_bucket" {
-  bucket = aws_s3_bucket.logs.id
-  policy = data.aws_iam_policy_document.logs_bucket_policy.json
-}
-
 resource "aws_iam_role" "cloudwatch_to_s3" {
   name = "cloudwatch-to-s3-role"
 
@@ -163,40 +133,59 @@ resource "aws_cloudtrail" "project11_trail" {
   include_global_service_events = true
   is_multi_region_trail         = true
   enable_logging                = true
-  depends_on = [
-    aws_s3_bucket_policy.logs_bucket
-  ]
+  
   cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.project11_log_group.arn}:*"
   cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail_to_cw_role.arn
 
 }
-
-resource "aws_s3_bucket_policy" "cloudtrail_s3_policy" {
+############################################
+resource "aws_s3_bucket_policy" "logs_bucket" {
   bucket = aws_s3_bucket.logs.id
 
   policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17",
     Statement = [
+
+      # 1) Deny insecure HTTP access
       {
-        Sid    = "AWSCloudTrailAclCheck"
-        Effect = "Allow"
-        Principal = {
-          Service = "cloudtrail.amazonaws.com"
+        Sid: "DenyInsecureTransport",
+        Effect: "Deny",
+        Principal: "*",
+        Action: "s3:*",
+        Resource: [
+          aws_s3_bucket.logs.arn,
+          "${aws_s3_bucket.logs.arn}/*"
+        ],
+        Condition: {
+          Bool: {
+            "aws:SecureTransport": "false"
+          }
         }
-        Action   = "s3:GetBucketAcl"
-        Resource = aws_s3_bucket.logs.arn
       },
+
+      # 2) CloudTrail requires ACL check on bucket
       {
-        Sid    = "AWSCloudTrailWrite"
-        Effect = "Allow"
-        Principal = {
-          Service = "cloudtrail.amazonaws.com"
-        }
-        Action   = "s3:PutObject"
-        Resource = "${aws_s3_bucket.logs.arn}/raw/*"
-        Condition = {
-          StringEquals = {
-            "s3:x-amz-acl" = "bucket-owner-full-control"
+        Sid: "AWSCloudTrailAclCheck",
+        Effect: "Allow",
+        Principal: {
+          Service: "cloudtrail.amazonaws.com"
+        },
+        Action: "s3:GetBucketAcl",
+        Resource: aws_s3_bucket.logs.arn
+      },
+
+      # 3) CloudTrail must be allowed to write to raw/ prefix
+      {
+        Sid: "AWSCloudTrailWrite",
+        Effect: "Allow",
+        Principal: {
+          Service: "cloudtrail.amazonaws.com"
+        },
+        Action: "s3:PutObject",
+        Resource: "${aws_s3_bucket.logs.arn}/raw/*",
+        Condition: {
+          StringEquals: {
+            "s3:x-amz-acl": "bucket-owner-full-control"
           }
         }
       }
@@ -204,6 +193,8 @@ resource "aws_s3_bucket_policy" "cloudtrail_s3_policy" {
   })
 }
 
+
+############################################
 resource "aws_iam_role" "glue_service_role" {
   name = "project11-glue-service-role-v2"
 
