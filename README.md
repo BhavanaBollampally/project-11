@@ -101,23 +101,8 @@ SELECT eventTime, eventName
 FROM project11_processed
 ORDER BY eventTime DESC
 LIMIT 20;
-Terraform Commands
 
-Initialize:
-
-terraform init
-
-
-Plan:
-
-terraform plan
-
-
-Apply:
-
-terraform apply
-
-After Lambda code update:
+## After Lambda code update:
 cd terraform/dev/lambda
 rm ../lambda_function.zip
 zip -r ../lambda_function.zip process_event.py
